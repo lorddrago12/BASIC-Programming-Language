@@ -1,6 +1,6 @@
 # 🧠 Mini BASIC Interpreter (Lexer + Shell)
 
-this is a mini BASic Interperter which i made because I'm trying to make my own language using python and i wll also add more features.
+this is a mini BASIC Interpreter which i made because I'm trying to make my own language using python and i wll also add more features.
 
 
 ---
