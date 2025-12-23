@@ -1,4 +1,4 @@
-# 🧠 Mini BASIC Interpreter — Developer Docs
+# 🧠 Mini BASIC Interpreter 
 
 A small but serious **BASIC-like language prototype** written in Python. This project now implements a **full front-end pipeline** for a language: **lexing**, **parsing**, **AST generation**, and **developer‑friendly error reporting**,
 and this is a project I'm working on to understand how programming language works and wanted to know how exactly it is made by making it my self.
