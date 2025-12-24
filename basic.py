@@ -65,6 +65,10 @@ class InvalidSyntaxError(Error):
     def __init__(self, pos_start, pos_end, details=""):
         super().__init__(pos_start, pos_end, "Invalid Syntax", details)
 
+class RTError(Error):
+    def __init__(self, pos_start, pos_end, details=""):
+        super().__init__(pos_start, pos_end, "Runtime Error", details)
+
 # =========================
 # POSITION
 # =========================
@@ -320,6 +324,28 @@ class Parser:
         return res.success(left)
 
 # =========================
+# RUNTIME RESULT
+# =========================
+
+class RTresult:
+    def __init__(self):
+        self.value = None
+        self.error = None
+
+    def register(self, res):
+        if res.error: self.error = res.error
+        return res.value
+
+    def succusses(self, value):
+        self.value = value
+        return self
+
+    def failiure(self, error):
+        self.error = error
+        return self
+
+
+# =========================
 # VALUES
 # =========================
 
@@ -335,19 +361,24 @@ class Number:
     
     def added_to(self, other):
         if isinstance(other, Number):
-            return Number(self.value + other.value).set_pos(self.pos_start, other.pos_end)
+            return Number(self.value + other.value).set_pos(self.pos_start, other.pos_end), None
 
     def subtracted_by(self, other):
         if isinstance(other, Number):
-            return Number(self.value - other.value).set_pos(self.pos_start, other.pos_end)
+            return Number(self.value - other.value).set_pos(self.pos_start, other.pos_end), None
 
     def multiplied_by(self, other):
         if isinstance(other, Number):
-            return Number(self.value * other.value).set_pos(self.pos_start, other.pos_end)
+            return Number(self.value * other.value).set_pos(self.pos_start, other.pos_end), None
 
     def divided_by(self, other):
         if isinstance(other, Number):
-            return Number(self.value / other.value).set_pos(self.pos_start, other.pos_end)
+            if other.value == 0:
+                return None, RTError(
+                    other.pos_start, other.pos_end,
+                    'Division by zero'
+                )
+            return Number(self.value / other.value).set_pos(self.pos_start, other.pos_end), None
 
     def __repr__(self):
         return str(self.value)
@@ -370,31 +401,48 @@ class Interpreter:
     # =========================
 
     def visit_NumberNode(self, node):
-        return Number(node.tok.value).set_pos(node.pos_start, node.pos_end)
-    
+        return RTresult().succusses(
+         Number(node.tok.value).set_pos(node.pos_start, node.pos_end)
+        )
     def visit_BinOpNode(self, node):
-        left = self.visit(node.left_node)
-        right = self.visit(node.right_node)
+        res = RTresult()
+        left = res.register(self.visit(node.left_node))
+        if res.error: return res
+        right = res.register(self.visit(node.right_node))
+        if res.error: return res
 
         if node.op_tok.type == TT_PLUS:
-            result = left.added_to(right)
+            result, error = left.added_to(right)
 
         elif node.op_tok.type == TT_MINUS:
-            result = left.subtracted_by(right)
+            result, error = left.subtracted_by(right)
 
         elif node.op_tok.type == TT_MUL:
-            result = left.multiplied_by(right)
+            result, error = left.multiplied_by(right)
 
         elif node.op_tok.type == TT_DIV:
-            result = left.divided_by(right)
+            result, error = left.divided_by(right)
 
+        if error:
+            return res.failiure(error)
+        else:
+            return res.succusses(result.set_pos(node.pos_start, node.pos_end))
         return result.set_pos(node.pos_start, node.pos_end)
 
     def visit_UnaryOpNode(self, node): 
-        number = self.visit(node.node)
+        res = RTresult()
+        number = res.resgister(self.visit(node.node))
+        if res.error: return res
+
+        error = None
 
         if node.op_tok.type == TT_MINUS:
             number = number.multiplied_by(Number(-1))
+
+        if error:
+            return res.failiure(error)
+        else:
+            return res.succusses(number.set_pos(node.pos_start, node.pos_end))
 
         return number.set_pos(node.pos_start, node.pos_end)
 
@@ -420,4 +468,4 @@ def run(fn, text):
     interpreter = Interpreter()
     result = interpreter.visit(ast.node)
 
-    return result, None
+    return result.value, result.error
