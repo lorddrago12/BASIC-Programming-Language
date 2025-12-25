@@ -1,22 +1,22 @@
 # 🧠 Mini BASIC Interpreter 
 
-A small but serious **BASIC-like language prototype** written in Python. This project now implements a **full front-end pipeline** for a language: **lexing**, **parsing**, **AST generation**, and **developer‑friendly error reporting**,
+A growing **BASIC-like programming language** written in Python. This project now goes beyond parsing — it includes a **working interpreter** that can actually **evaluate expressions**, complete with **runtime errors** and **clean error messages**.
 and this is a project I'm working on to understand how programming language works and wanted to know how exactly it is made by making it my self.
+
 
 ---
 
 ## 🚀 What This Project Is
 
-This project is the foundation of a programming language. It currently supports:
+This project implements a **full mini language pipeline**:
 
-* 🔤 **Lexing** — converting raw text into tokens
-* 🌳 **Parsing** — converting tokens into an AST (Abstract Syntax Tree)
-* ➕ **Operator precedence** (`+ - * /`)
-* ➖ **Unary operators** (`+5`, `-3`)
-* 📍 **Precise syntax & character errors** with arrows
-* 💻 **Interactive REPL shell** for testing
+* 🔤 **Lexer** — turns text into tokens
+* 🌳 **Parser** — turns tokens into an AST
+* 🧮 **Interpreter** — evaluates the AST
+* 🚨 **Error system** — syntax + runtime errors
+* 💻 **REPL shell** — interactive playground
 
-The output is an **AST**, not an evaluated result (evaluation comes later 👀).
+You can now type math expressions and get **real results**, not just ASTs 👀
 
 ---
 
@@ -24,104 +24,93 @@ The output is an **AST**, not an evaluated result (evaluation comes later 👀).
 
 ```
 project/
-├── basic.py              # Lexer, parser, AST nodes, core logic
-├── shell.py              # Interactive REPL
-├── Grammer.txt           # Grammar reference (BNF-style)
-├── strings_with_arrows.py# Pretty error highlighting
+├── basic.py               # Lexer, parser, AST, interpreter, runtime
+├── shell.py               # Interactive REPL
+├── Grammer.txt            # Language grammar reference
+├── strings_with_arrows.py # Pretty error highlighting
 ```
 
-Each file has a single, clear responsibility — just like real interpreter projects.
+Each file has a single responsibility, just like real language projects.
 
 ---
 
-## 📦 basic.py — Core Language Engine
+## 📦 basic.py — The Language Engine
 
-This file contains everything related to **understanding program structure**.
+This file contains **everything that makes the language work**.
 
 ---
 
 ### 🔢 Tokens & Constants
 
-Defines token types like:
+Defines all token types:
 
-* `INT`, `FLOAT`
-* `PLUS`, `MINUS`, `MUL`, `DIV`
-* `LPAREN`, `RPAREN`
-* `EOF`
+* Numbers: `INT`, `FLOAT`
+* Operators: `+ - * /`
+* Parentheses
+* `EOF` (end of file)
 
-Tokens are the **building blocks** of the language.
-
----
-
-### 🧾 Token Class
-
-Represents a single token with:
-
-* `type` → what kind of token it is
-* `value` → optional (numbers)
-* `pos_start` / `pos_end` → source location
-
-Readable `__repr__` makes debugging easy.
+Tokens are the smallest meaningful units of the language.
 
 ---
 
-### 🚨 Error System
+### 🧾 Token & Position Tracking
+
+Every token stores:
+
+* its type & value
+* where it started and ended in the source code
+
+The `Position` system tracks:
+
+* index, line, column
+
+This enables **pinpoint-accurate error messages**.
+
+---
+
+### 🚨 Error System (Compiler‑style)
 
 Custom error classes:
 
-* `IllegalCharError` → unknown characters
-* `InvalidSyntaxError` → grammar violations
+* `IllegalCharError` — unknown characters
+* `InvalidSyntaxError` — grammar mistakes
+* `RTError` — runtime errors (like division by zero)
 
-Errors carry **position info**, enabling precise diagnostics.
+Errors use `strings_with_arrows.py` to visually highlight mistakes:
 
----
-
-### 📍 Position Tracking
-
-The `Position` class tracks:
-
-* Index in text
-* Line number
-* Column number
-
-This allows accurate error messages and arrow highlighting.
+```
+1 + * 3
+    ^
+```
 
 ---
 
-### 🔤 Lexer (Tokenizer)
+### 🔤 Lexer
 
-The lexer reads input **character by character** and produces tokens.
+Reads input **character by character** and produces tokens.
 
-Responsibilities:
+Handles:
 
-* Skip whitespace
-* Build integers & floats
-* Recognize operators and parentheses
-* Detect illegal characters
-
-Key methods:
-
-* `advance()` — moves through the text
-* `make_tokens()` — main token loop
-* `make_number()` — parses numeric literals
+* integers & floats
+* operators & parentheses
+* whitespace skipping
+* illegal character detection
 
 ---
 
 ### 🌳 AST Nodes
 
-* `NumberNode` → numeric literals
-* `UnaryOpNode` → unary operations (`+x`, `-x`)
-* `BinOpNode` → binary operations (`x + y`, `x * y`)
+The AST represents **structure**, not text:
 
-The AST represents **structure**, not execution.
+* `NumberNode` → numbers
+* `UnaryOpNode` → `+x`, `-x`
+* `BinOpNode` → `x + y`, `x * y`
 
 ---
 
 ### 🧠 Parser (Recursive Descent)
 
-The parser converts tokens into an AST using **recursive descent parsing**.
-
-Grammar (from `Grammer.txt`):
+Uses recursive descent parsing based on this grammar (`Grammer.txt`):
 
 ```
 expr   : term ((+|-) term)*
@@ -131,83 +120,69 @@ factor : INT | FLOAT
        | LPAREN expr RPAREN
 ```
 
-This naturally enforces **operator precedence** and supports unary operators.
+This automatically enforces **operator precedence**.
 
 ---
 
-### 🏁 run() — Public Interface
+### 🧮 Runtime Values & Context
+
+* `Number` represents runtime numeric values
+* Supports arithmetic with error checking
+* `Context` tracks where execution happens
+
+This is groundwork for future variables & scopes.
+
+---
+
+### ⚙️ Interpreter
+
+The interpreter **walks the AST** using the visitor pattern:
+
+* `visit_NumberNode`
+* `visit_BinOpNode`
+* `visit_UnaryOpNode`
+
+Each visit returns an `RTResult` containing:
+
+* a value **or**
+* a runtime error
+
+This separation keeps execution clean and safe.
+
+---
+
+### 🏁 run() — The Public API
 
 ```python
 run(filename, text)
 ```
 
-Pipeline:
+Execution pipeline:
 
 ```
-Text → Lexer → Tokens → Parser → AST / Error
+Text → Lexer → Tokens → Parser → AST → Interpreter → Result / Error
 ```
 
-This clean interface is used by the shell and future interpreter stages.
+Used by the REPL and future integrations.
 
 ---
 
 ## 💻 shell.py — Interactive REPL
 
-A simple **Read–Eval–Print Loop**:
+A simple loop that lets you test the language:
 
-1. Prompt user (`Basic >`)
-2. Send input to `basic.run()`
-3. Print AST or error
-4. Repeat forever
+```
+Basic > 1 + 2 * 3
+7
+```
 
-Perfect for quick testing while developing the language.
 
 ---
 
-## 🎯 strings_with_arrows.py — Error Highlighting
+## 🎯 strings_with_arrows.py — A library which helps in error handling
 
-This utility displays **exact error locations** using arrows:
+Utility that prints **exact error locations** with arrows.
 
-```
-1 + * 3
-    ^
-```
-
-It makes syntax errors much easier to understand and debug — a feature real languages rely on.
-
----
-
-## 🔁 Execution Flow
-
-```
-User Input
-   ↓
-Lexer → Tokens
-   ↓
-Parser → AST
-   ↓
-Shell Output
-```
-
-No evaluation yet — this stage focuses purely on **language structure**.
-
----
-
-## 🧠 Why This Architecture Works
-
-* Mirrors real compiler/interpreter pipelines
-* Clear separation of concerns
-* Easy to extend (evaluation comes next)
-* Beginner-friendly but industry-aligned
-
-This is exactly how real languages start.
-
----
-
-### Parser & Errors
-
-* Better syntax recovery
-* More descriptive error messages
-* Unexpected-token handling
+This dramatically improves debugging and mirrors real compilers.
 
 ---
