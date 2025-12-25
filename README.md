@@ -176,7 +176,6 @@ Basic > 1 + 2 * 3
 7
 ```
 
-
 ---
 
 ## 🎯 strings_with_arrows.py — A library which helps in error handling
