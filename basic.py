@@ -1,4 +1,4 @@
-# =========================
+ # =========================
 # IMPORTS
 # =========================
 
@@ -20,9 +20,10 @@ TT_PLUS    = "PLUS"
 TT_MINUS   = "MINUS"
 TT_MUL     = "MUL"
 TT_DIV     = "DIV"
+TT_POW     = "POW"
 TT_LPAREN  = "LPAREN"
 TT_RPAREN  = "RPAREN"
-TT_EOF = "EOF"
+TT_EOF     = "EOF"
 
 # =========================
 # TOKEN
@@ -161,6 +162,10 @@ class Lexer:
                 tokens.append(Token(TT_DIV, pos_start=self.pos))
                 self.advance()
 
+            elif self.current_char == "^":
+                tokens.append(Token(TT_POW, pos_start=self.pos))
+                self.advance()
+
             elif self.current_char == "(":
                 tokens.append(Token(TT_LPAREN, pos_start=self.pos))
                 self.advance()
@@ -287,19 +292,16 @@ class Parser:
             )
         return res
 
-    def factor(self):
+    def power(self):
+        return self.bin_op(self.atom, (TT_POW), self.factor)
+    
+    # =========================
+
+    def atom(self):
         res = ParseResult()
         tok = self.current_tok
 
-        if tok.type in (TT_PLUS, TT_MINUS):
-            res.register(self.advance())
-            factor = res.register(self.factor())
-            if res.error:
-                return res
-            return res.success(UnaryOpNode(tok, factor))
-
-
-        elif tok.type in (TT_INT, TT_FLOAT):
+        if tok.type in (TT_INT, TT_FLOAT):
             res.register(self.advance())
             return res.success(NumberNode(tok))
 
@@ -311,21 +313,30 @@ class Parser:
                 res.register(self.advance())
                 return res.success(expr)
             else:
-                return res.failure(
-                InvalidSyntaxError(
-                    self.current_tok.pos_start,
-                    self.current_tok.pos_end,
-                    "Expected ')'"
-                )
-            )
-
+                return self.power()
+            
         return res.failure(
-            InvalidSyntaxError(
-                tok.pos_start,
-                tok.pos_end,
-                "Expected int or float or '('"
-            )
-        )
+    InvalidSyntaxError(
+        tok.pos_start,
+        tok.pos_end,
+        "Expected int, float, '+', '-', or '('"
+    )
+)
+
+
+
+    def factor(self):
+        res = ParseResult()
+        tok = self.current_tok
+
+        if tok.type in (TT_PLUS, TT_MINUS):
+            res.register(self.advance())
+            factor = res.register(self.factor())
+            if res.error:
+                return res
+            return res.success(UnaryOpNode(tok, factor))
+
+        return self.power()
 
 
     def term(self):
@@ -334,15 +345,17 @@ class Parser:
     def expr(self):
         return self.bin_op(self.term, (TT_PLUS, TT_MINUS))
 
-    def bin_op(self, func, ops):
+    def bin_op(self, func_a, ops, func_b=None):
+        if func_b == None:
+            func_b = func_a
         res = ParseResult()
-        left = res.register(func())
+        left = res.register(func_a())
         if res.error: return res
 
         while self.current_tok.type in ops:
             op_tok = self.current_tok
             res.register(self.advance())
-            right = res.register(func())
+            right = res.register(func_b())
             if res.error: return res
             left = BinOpNode(left, op_tok, right)
 
@@ -410,6 +423,10 @@ class Number:
                     self.context
                 )
             return Number(self.value / other.value).set_context(self.context), None
+        
+    def powed_by(self, other):
+        if isinstance(other, Number):
+            return Number(self.value ** other.value ).set_context(self.context), None
 
     def __repr__(self):
         return str(self.value)
@@ -464,28 +481,28 @@ class Interpreter:
         elif node.op_tok.type == TT_DIV:
             result, error = left.divided_by(right)
 
+        elif node.op_tok.type == TT_POW:
+            result, error = left.powed_by(right)
+
         if error:
             return res.failiure(error)
         else:
             return res.succusses(result.set_pos(node.pos_start, node.pos_end))
-        return result.set_pos(node.pos_start, node.pos_end)
 
     def visit_UnaryOpNode(self, node, context): 
         res = RTresult()
-        number = res.resgister(self.visit(node.node, context))
+        number = res.register(self.visit(node.node, context))
         if res.error: return res
 
         error = None
 
         if node.op_tok.type == TT_MINUS:
-            number = number.multiplied_by(Number(-1))
+            number, error = number.multiplied_by(Number(-1))
 
         if error:
             return res.failiure(error)
         else:
             return res.succusses(number.set_pos(node.pos_start, node.pos_end))
-
-        return number.set_pos(node.pos_start, node.pos_end)
 
 
 
