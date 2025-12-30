@@ -1,14 +1,20 @@
- # =========================
+# =========================
 # IMPORTS
 # =========================
 
+import keyword
+from tkinter import NO
 from strings_with_arrows import * 
+
+import string
 
 # =========================
 # CONSTANTS
 # =========================
 
 DIGITS = "0123456789"
+LETTERS =  string.ascii_letters
+LETTERS_DIGITS = LETTERS + DIGITS
 
 # =========================
 # TOKEN TYPES
@@ -16,21 +22,28 @@ DIGITS = "0123456789"
 
 TT_INT     = "INT"
 TT_FLOAT   = "FLOAT"
+TT_IDENTIFIER = "IDENTIFIER"
+TT_KEYWORD = "KEYWORD"
 TT_PLUS    = "PLUS"
 TT_MINUS   = "MINUS"
 TT_MUL     = "MUL"
 TT_DIV     = "DIV"
 TT_POW     = "POW"
+TT_EQ      = "EQ"
 TT_LPAREN  = "LPAREN"
 TT_RPAREN  = "RPAREN"
 TT_EOF     = "EOF"
+
+KEYWORDS = [
+    'VAR'
+]
 
 # =========================
 # TOKEN
 # =========================
 
 class Token:
-    def __init__(self, type_, value=None, pos_start=None, pos_end = None):
+    def __init__(self, type_, value=None, pos_start=None, pos_end=None):
         self.type = type_
         self.value = value
 
@@ -145,6 +158,9 @@ class Lexer:
 
             elif self.current_char in DIGITS:
                 tokens.append(self.make_number())
+            
+            elif self.current_char in LETTERS:
+                tokens.append(self.make_identifier())
 
             elif self.current_char == "+":
                 tokens.append(Token(TT_PLUS, pos_start=self.pos))
@@ -164,6 +180,10 @@ class Lexer:
 
             elif self.current_char == "^":
                 tokens.append(Token(TT_POW, pos_start=self.pos))
+                self.advance()
+
+            elif self.current_char == "=":
+                tokens.append(Token(TT_EQ, pos_start=self.pos))
                 self.advance()
 
             elif self.current_char == "(":
@@ -198,7 +218,20 @@ class Lexer:
 
         if dot_count == 0:
             return Token(TT_INT, int(num_str), pos_start, self.pos)
-        return Token(TT_FLOAT, float(num_str), pos_start, self.pos)
+        else:
+            return Token(TT_FLOAT, float(num_str), pos_start, self.pos)
+
+    def make_identifier(self):
+        id_str = ''
+        pos_start = self.pos.copy()
+
+        while self.current_char != None and self.current_char in LETTERS_DIGITS + '_':
+            id_str += self.current_char
+            self.advance()
+
+        tok_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
+        return Token(tok_type, id_str, pos_start, self.pos)
+
 
 # =========================
 # AST NODES
@@ -250,7 +283,8 @@ class ParseResult:
 
     def register(self, res):
         if isinstance(res, ParseResult):
-            if res.error: self.error = res.error
+            if res.error:
+                self.error = res.error
             return res.node
 
         return res
@@ -294,8 +328,6 @@ class Parser:
 
     def power(self):
         return self.bin_op(self.atom, (TT_POW), self.factor)
-    
-    # =========================
 
     def atom(self):
         res = ParseResult()
@@ -308,20 +340,21 @@ class Parser:
         elif tok.type == TT_LPAREN:
             res.register(self.advance())
             expr = res.register(self.expr())
-            if res.error: return res
+            if res.error:
+                return res
             if self.current_tok.type == TT_RPAREN:
                 res.register(self.advance())
                 return res.success(expr)
             else:
                 return self.power()
-            
+
         return res.failure(
-    InvalidSyntaxError(
-        tok.pos_start,
-        tok.pos_end,
-        "Expected int, float, '+', '-', or '('"
-    )
-)
+            InvalidSyntaxError(
+                tok.pos_start,
+                tok.pos_end,
+                "Expected int, float, '+', '-', or '('"
+            )
+        )
 
 
 
@@ -346,17 +379,19 @@ class Parser:
         return self.bin_op(self.term, (TT_PLUS, TT_MINUS))
 
     def bin_op(self, func_a, ops, func_b=None):
-        if func_b == None:
+        if func_b is None:
             func_b = func_a
         res = ParseResult()
         left = res.register(func_a())
-        if res.error: return res
+        if res.error:
+            return res
 
         while self.current_tok.type in ops:
             op_tok = self.current_tok
             res.register(self.advance())
             right = res.register(func_b())
-            if res.error: return res
+            if res.error:
+                return res
             left = BinOpNode(left, op_tok, right)
 
         return res.success(left)
@@ -371,14 +406,15 @@ class RTresult:
         self.error = None
 
     def register(self, res):
-        if res.error: self.error = res.error
+        if res.error:
+            self.error = res.error
         return res.value
 
-    def succusses(self, value):
+    def success(self, value):
         self.value = value
         return self
 
-    def failiure(self, error):
+    def failure(self, error):
         self.error = error
         return self
 
@@ -426,7 +462,7 @@ class Number:
         
     def powed_by(self, other):
         if isinstance(other, Number):
-            return Number(self.value ** other.value ).set_context(self.context), None
+            return Number(self.value ** other.value).set_context(self.context), None
 
     def __repr__(self):
         return str(self.value)
@@ -459,15 +495,18 @@ class Interpreter:
     # =========================
 
     def visit_NumberNode(self, node, context):
-        return RTresult().succusses(
-         Number(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
+        return RTresult().success(
+            Number(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
         )
+
     def visit_BinOpNode(self, node, context):
         res = RTresult()
         left = res.register(self.visit(node.left_node, context))
-        if res.error: return res
+        if res.error:
+            return res
         right = res.register(self.visit(node.right_node, context))
-        if res.error: return res
+        if res.error:
+            return res
 
         if node.op_tok.type == TT_PLUS:
             result, error = left.added_to(right)
@@ -485,9 +524,9 @@ class Interpreter:
             result, error = left.powed_by(right)
 
         if error:
-            return res.failiure(error)
+            return res.failure(error)
         else:
-            return res.succusses(result.set_pos(node.pos_start, node.pos_end))
+            return res.success(result.set_pos(node.pos_start, node.pos_end))
 
     def visit_UnaryOpNode(self, node, context): 
         res = RTresult()
