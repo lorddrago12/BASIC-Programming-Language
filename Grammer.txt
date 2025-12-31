@@ -8,5 +8,5 @@ factor : (PLUS|MINUS) factor
 
 power  : atom (POW factor)*
 
-atom : INT | FLOAT
+atom : INT | FLOAT | IDENTIFIER
      : LPAREN expr RPAREN
