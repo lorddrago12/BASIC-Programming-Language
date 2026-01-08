@@ -73,4 +73,4 @@ To learn how real languages work:
 
 
 ## 📝 Note
-This project is **for learning and experimentation** —  
+This project is **for learning and experimentation** 
