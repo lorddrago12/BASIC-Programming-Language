@@ -41,7 +41,11 @@ KEYWORDS = [
     "IF",
     "THEN",
     "ELIF",
-    "ELSE"
+    "ELSE",
+    "FOR",
+    "TO",
+    "STEP",
+    "WHILE"
 ]
 
 # =========================
@@ -301,6 +305,25 @@ class IfNode:
         self.pos_start = cases[0][0].pos_start
         self.pos_end = (else_case or cases[-1][0]).pos_end
 
+class ForNode:
+    def __init__(self, var_name_tok, start_value_node, end_value_node, step_value_node, body_node):
+        self.var_name_tok = var_name_tok
+        self.start_value_node = start_value_node
+        self.end_value_node = end_value_node
+        self.step_value_node = step_value_node
+        self.body_node = body_node
+
+        self.pos_start = self.var_name_tok.pos_start
+        self.pos_end = self.body_node.pos_end
+
+class WhileNode:
+    def __init__(self, condition_node, body_node):
+        self.condition_node = condition_node
+        self.body_node = body_node
+
+        self.pos_start = self.condition_node
+        self.pos_end = self.body_node
+
 # =========================
 # PARSE RESULT
 # =========================
@@ -412,6 +435,76 @@ class Parser:
 
         return res.success(IfNode(cases, else_case))
 
+    def for_expr(self):
+        res = ParseResult()
+
+        if not self.current_tok.matches(TT_KEYWORD, 'FOR'):
+            return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    f"Expected FOR"
+                ))
+
+        res.register_advance()
+        self.advance()
+
+        if self.current_tok != TT_IDENTIFIER:
+            return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    f"Expected identifer"
+                ))
+
+        var_name = self.current_tok
+        res.register_advance()
+        self.advance()
+
+        if self.current_tok != TT_EQ:
+            return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    f"Expected '='"
+                ))
+
+        res.register_advance()
+        self.advance()
+
+        start_value = res.register(self.expr())
+        if res.error: return res
+
+        if not self.current_tok.matches(TT_KEYWORD, 'TO'):
+            return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected TO"
+                ))
+
+        res.register_advance()
+        self.advance()
+
+        end_value = res.register(self.expr())
+        if res.error: return res
+
+        if self.current_tok.matches(TT_KEYWORD, 'STEP'):
+            res.register_advance()
+            self.advance()
+
+            step_value = res.register(self.expr())
+            if res.error: return res
+        else:
+            step_value = None
+
+        if not self.current_tok.matches(TT_KEYWORD, 'THEN'):
+            return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected THEN"
+                ))
+
+        res.register_advance()
+        self.advance()
+
+        body = res.register(self.expr())
+        if res.error: return res
+
+        return res.success(ForNode(var_name, start_value, end_value, step_value, body))
+
+
     def atom(self):
         res = ParseResult()
         tok = self.current_tok
@@ -442,6 +535,17 @@ class Parser:
             if_expr = res.register(self.if_expr())
             if res.error: return res
             return res.success(if_expr)
+
+        elif tok.matches(TT_KEYWORD, 'FOR'):
+            for_expr = res.register(self.for_expr())
+            if res.error: return res
+            return res.success(for_expr)
+
+        elif tok.matches(TT_KEYWORD, 'WHILE'):
+            while_expr = res.register(self.while_expr())
+            if res.error: return res
+            return res.success(while_expr)
+            
 
         return res.failure(InvalidSyntaxError(tok.pos_start, tok.pos_end,
                          "Expected int, float, identifier, '(', or IF"))
