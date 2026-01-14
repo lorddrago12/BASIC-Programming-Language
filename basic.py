@@ -31,6 +31,8 @@ TT_LT = "LT"
 TT_GT = "GT"
 TT_LTE = "LTE"
 TT_GTE = "GTE"
+TT_COMMA = "COMMA",
+TT_ARROW = "ARROW",
 TT_EOF = "EOF"
 
 KEYWORDS = [
@@ -45,7 +47,8 @@ KEYWORDS = [
     "FOR",
     "TO",
     "STEP",
-    "WHILE"
+    "WHILE",
+    "FUNC"
 ]
 
 # =========================
@@ -172,23 +175,51 @@ class Lexer:
                 tokens.append(self.make_number())
             elif self.current_char in LETTERS:
                 tokens.append(self.make_identifier())
-            elif self.current_char == "+": tokens.append(Token(TT_PLUS, pos_start=self.pos)); self.advance()
-            elif self.current_char == "-": tokens.append(Token(TT_MINUS, pos_start=self.pos)); self.advance()
-            elif self.current_char == "*": tokens.append(Token(TT_MUL, pos_start=self.pos)); self.advance()
-            elif self.current_char == "/": tokens.append(Token(TT_DIV, pos_start=self.pos)); self.advance()
-            elif self.current_char == "^": tokens.append(Token(TT_POW, pos_start=self.pos)); self.advance()
-            elif self.current_char == "(": tokens.append(Token(TT_LPAREN, pos_start=self.pos)); self.advance()
-            elif self.current_char == ")": tokens.append(Token(TT_RPAREN, pos_start=self.pos)); self.advance()
-            elif self.current_char == "!":
+            elif self.current_char == '+':
+                tokens.append(Token(TT_PLUS, pos_start=self.pos))
+                self.advance()
+
+            elif self.current_char == '-':
+                self.make_minus_or_arrow()
+
+            elif self.current_char == '*':
+                tokens.append(Token(TT_MUL, pos_start=self.pos))
+                self.advance()
+
+            elif self.current_char == '/':
+                tokens.append(Token(TT_DIV, pos_start=self.pos))
+                self.advance()
+
+            elif self.current_char == '^':
+                tokens.append(Token(TT_POW, pos_start=self.pos))
+                self.advance()
+
+            elif self.current_char == '(':
+                tokens.append(Token(TT_LPAREN, pos_start=self.pos))
+                self.advance()
+
+            elif self.current_char == ')':
+                tokens.append(Token(TT_RPAREN, pos_start=self.pos))
+                self.advance()
+
+            elif self.current_char == '!':
                 tok, error = self.make_not_equals()
                 if error: return [], error
                 tokens.append(tok)
-            elif self.current_char == "=":
+
+            elif self.current_char == '=':
                 tokens.append(self.make_equals())
-            elif self.current_char == "<":
+
+            elif self.current_char == '<':
                 tokens.append(self.make_less_than())
-            elif self.current_char == ">":
+
+            elif self.current_char == '>':
                 tokens.append(self.make_greater_than())
+
+            elif self.current_char == ',':
+                tokens.append(Token(TT_COMMA, pos_start=self.pos))
+                self.advance()
+
             else:
                 pos_start = self.pos.copy()
                 char = self.current_char
@@ -232,6 +263,17 @@ class Lexer:
             self.advance()
             return Token(TT_NE, pos_start=pos_start, pos_end=self.pos), None
         return None, ExpectedCharError(pos_start, self.pos, "'=' after '!'")
+
+    def make_minus_or_arrow(self):
+        tok_type = TT_MINUS
+        pos_start = self.pos_copy()
+        self.advance()
+
+        if self.current_char == ">":
+            self.advance()
+            tok_type = TT_ARROW
+        
+        return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
 
     def make_equals(self):
         tok_type = TT_EQ
