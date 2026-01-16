@@ -387,14 +387,13 @@ class CallNode:
     def __init__(self, node_to_call, arg_nodes):
         self.node_to_call = node_to_call
         self.arg_nodes = arg_nodes
+        self.pos_start = node_to_call.pos_start
 
-        self.pos_start = self.node_to_call
-        self.arg_nodes = arg_nodes
-
-        if len(self.arg_nodes) > 0:
-            self.pos_end = self.arg_nodes[len(self.arg_nodes) -1].pos_end
+        if len(arg_nodes) > 0:
+            self.pos_end = arg_nodes[-1].pos_end
         else:
-            self.pos_end = self.node_to_call.pos_end
+            self.pos_end = node_to_call.pos_end
+
             
 
 # =========================
@@ -648,11 +647,11 @@ class Parser:
         elif tok.matches(TT_KEYWORD, 'FUNC'):
             node = res.register(self.func_def())
             if res.error: return res
-            return res.success(func_def)
+            return res.success(node)
 
         return res.failure(InvalidSyntaxError(
             tok.pos_start, tok.pos_end,
-            "Expected int, float, identifier, '+', '-', '(')"
+            "Expected int, float, identifier, '+', '-', '('), 'IF', 'FOR', 'WHILE', 'FUNC'"
         ))
 
     def power(self):
@@ -768,9 +767,8 @@ class Parser:
             if res.error: return res
             return res.success(VarAssignNode(var_name_tok, expr))
 
-        # Check for variable reassignment (identifier = expression)
+
         if self.current_tok.type == TT_IDENTIFIER:
-            # Peek ahead to see if next token is =
             next_idx = self.tok_idx + 1
             if next_idx < len(self.tokens) and self.tokens[next_idx].type == TT_EQ:
                 var_name_tok = self.current_tok
@@ -990,7 +988,7 @@ class Value:
 	def ored_by(self, other):
 		return None, self.illegal_operation(other)
 
-	def notted(self):
+	def notted(self, other):
 		return None, self.illegal_operation(other)
 
 	def execute(self, args):
@@ -1123,7 +1121,7 @@ class Function(Value):
 		self.arg_names = arg_names
 
 	def execute(self, args):
-		res = RTResult()
+		res = RTresult()
 		interpreter = Interpreter()
 		new_context = Context(self.name, self.context, self.pos_start)
 		new_context.symbol_table = SymbolTable(new_context.parent.symbol_table)
@@ -1177,9 +1175,9 @@ class Context:
 # =========================
 
 class SymbolTable:
-    def __init__(self):
+    def __init__(self, parent=None):
         self.symbols = {}
-        self.parent = None
+        self.parent = parent
 
     def get(self, name):
         value = self.symbols.get(name, None)
@@ -1205,6 +1203,8 @@ class Interpreter:
 
     def no_visit_method(self, node):
         raise Exception(f"No visit method defined for {type(node).__name__}")
+
+# =========================
 
     def visit_NumberNode(self, node, context):
         return RTresult().success(
@@ -1333,6 +1333,35 @@ class Interpreter:
             if res.error: return res
 
         return res.success(None)
+
+    def visit_FuncDefNode(self, node, context):
+        res = RTresult()
+
+        func_name = node.var_name_tok.value if node.var_name_tok else None
+        body_node = node.body_node
+        arg_names = [arg_names.value for arg_name in node.arg_name_tok]
+        func_value = Function(func_name, body_node, arg_names).set_context(context).set_pos()
+
+        if node.var_name_tok:
+            context.symbol_table.set(func_name, func_value)
+
+        return res.success(func_value)
+
+    def visit_CallNode(self, node, context):
+        res = RTresult()
+        args = []
+
+        value_to_call = res.register(self.visit(node.node_to_call, context))
+        if res.error: return res
+        value_to_call = value_to_call.copy().set_pos(node.pos_start, node.pos_end)
+
+        for arg_node in node.arg_nodes:
+            args.append(res.register(self.visit(arg_node, context)))
+            if res.error: return res
+
+        return_value = res.register(value_to_call.execute(args))
+        if res.error: return res
+        return res.success(return_value)
 
 
 # =========================
