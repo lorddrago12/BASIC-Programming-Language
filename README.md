@@ -1,76 +1,104 @@
-# 🧠 BASIC — Mini Programming Language
+# 🧠 BASIC — My Own Mini Programming Language
 
-A tiny custom-built programming language written in Python.  
-Includes a lexer, parser, interpreter, variables, evaluation, and an interactive REPL.
+This is a small programming language I built using python
+It now supports variables, math, conditions, loops, functions, strings and you can run everything inside a REPL.  
+I made this to learn how real languages work under the hood.
 
 ---
 
 ## 📂 Project Files
 ```
-basic.py               → Core language (lexer + parser + interpreter)
-shell.py               → REPL (run + test code)
-strings_with_arrows.py → Library for showing errors with arrows
-Grammer.txt            → Syntax rules for the language
+basic.py               → The main brain (lexer, parser, interpreter)
+shell.py               → REPL where you type and run BASIC code
+strings_with_arrows.py → Makes errors readable with arrows
+Grammer.txt            → All the language rules written out
 ```
 
 ---
 
-## ✨ Features
-- 🔤 Lexical analysis (numbers, identifiers, operators, keywords)
-- 🧩 Parser creates an AST from tokens
-- 🧠 Interpreter executes expressions
-- 📝 Variables using `VAR name = value`
-- 🧮 Supports `+ - * / ^` and parentheses
-- ➕ Unary ops (`-5`, `+3`)
-- 🚨 Three error types:
-  - Illegal Character
-  - Invalid Syntax
-  - Runtime Error
-- 🎯 Arrow-based error highlighting
-- 💬 Full REPL shell (`Basic >`)
+## ✨ What BASIC Can Do
+- 🔤 Handle numbers, names, keywords and strings `"hello"`
+- ➕ Math operations `+ - * / ^`
+- 🔗 Comparison and logic (`==`, `<`, `>`, `AND`, `OR`, `NOT`)
+- 📦 Variables using `VAR`
+- 🚦 If/elif/else
+- 🔁 While loops and for loops
+- 🧪 Create and call your own functions like:
+  ```
+  FUNC add(x, y) -> x + y
+  ```
+- 🎯 Return values properly
+- 💬 Run everything in an interactive shell
+
+Pretty much everything you’d expect in a tiny language.
 
 ---
 
-## 🧠 Supported Examples
+## 🧠 Code Examples
 ```
-5 + 3
+5 + 3 * 2
+
 VAR x = 10
-x * 2
--(3 + 5)
-2^3^2
+x = x + 1
+
+IF x > 5 THEN "bigger" ELSE "smaller"
+
+FOR i = 1 TO 5 THEN i
+
+WHILE x < 20 THEN x = x + 2
+
+FUNC square(n) -> n * n
+square(6)
 ```
 
 ---
 
-## ▶️ Running the Program
+## ▶️ How To Run It
 ```
 python shell.py
 ```
-Type expressions and press Enter.
-Use Ctrl + C to exit.
+Start typing code and hit ENTER.  
+Use Ctrl + C to quit.
 
 ---
 
-## 🧩 Grammar Summary (from Grammer.txt)
+## 📌 Grammar (from Grammer.txt)
 ```
-expr   → VAR assignment | math expression
-term   → multiplication/division
+expr   → VAR assignment or logic
+comp   → comparisons
+arith  → + and -
+term   → * and /
 factor → unary + or -
-power  → exponent operator ^
-atom   → number | identifier | (expr)
+power  → ^
+call   → function calls
+atom   → number | string | identifier | (expr)
+if     → IF / ELIF / ELSE
+for    → FOR ... TO ...
+while  → WHILE ...
+func   → FUNC name(params) -> expression
 ```
 
 ---
 
-## 🎯 Why This Project?
-To learn how real languages work:
-- Tokenizing code
-- Building grammar rules
-- Parsing into structure
-- Evaluating logic step by step
-- Handling runtime errors
+## 💡 Why I Built This
+I wanted to understand:
+- how code gets read
+- how tokens and syntax rules work
+- how to build an AST
+- how to execute expressions step by step
+- and how real languages handle errors
 
+The best way to learn it was to just build one myself.
 
+---
 
-## 📝 Note
-This project is **for learning and experimentation** 
+## 🚀 Things I Want To Add Later
+- Better `return` statements
+- Lists, booleans, maybe strings with functions
+- Standard library functions
+- Run `.bas` files directly
+- Scoping (global/local)
+- Loops with break/continue
+- More built-ins
+
+---
