@@ -1311,7 +1311,7 @@ class List(Value):
     def multed_by(self, other):
         if isinstance(other, List):
             new_list = self.copy()
-            new_list.elements.extend(other)
+            new_list.elements.extend(other.elements)
             return new_list, None
         else:
             return None, Value.illegal_operation(self, other)
@@ -1319,7 +1319,7 @@ class List(Value):
     def dived_by(self, other):
         if isinstance(other, Number):
             try:
-                return self.elements[other.value]
+                return self.elements[other.value], None
             except (IndexError, TypeError):
                 return None, RTError(
                     other.pos_start, other.pos_end,
@@ -1335,6 +1335,9 @@ class List(Value):
         copy.set_pos(self.pos_start, self.pos_end)
         copy.set_context(self.context)
         return copy
+
+    def  __repr__(self) -> str:
+         return f'[{", ".join([str(x) for x in self.elements])}]'
 
 class Function(Value):
 	def __init__(self, name, body_node, arg_names):
@@ -1447,7 +1450,9 @@ class Interpreter:
             elements.append(res.register(self.visit(element_node, context)))
             if res.error: return res
 
-        return res.success(elements)
+        return res.success(
+            List(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
+            )
 
     def visit_VarAccessNode(self, node, context):
         res = RTresult()
@@ -1527,6 +1532,7 @@ class Interpreter:
 
     def visit_ForNode(self, node, context):
         res = RTresult()
+        elements = []
 
         start_value = res.register(self.visit(node.start_value_node, context))
         if res.error: return res
@@ -1549,17 +1555,19 @@ class Interpreter:
 
         while condition():
             context.symbol_table.set(node.var_name_tok.value, Number(i))
-
-            res.register(self.visit(node.body_node, context))
-            if res.error: return res
-
             i += step_value.value
 
-        return res.success(Number(0))
+            elements.append(res.register(self.visit(node.body_node, context)))
+            if res.error: return res
+
+        return res.success(
+            List(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
+        )
 
 
     def visit_WhileNode(self, node, context):
         res = RTresult()
+        elements = []
 
         while True:
             condition = res.register(self.visit(node.condition_node, context))
@@ -1567,10 +1575,12 @@ class Interpreter:
 
             if not condition.is_true(): break
 
-            res.register(self.visit(node.body_node, context))
+            elements.append(res.register(self.visit(node.body_node, context)))
             if res.error: return res
 
-        return res.success(None)
+        return res.success(
+            List(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
+        )
 
     def visit_FuncDefNode(self, node, context):
         res = RTresult()
