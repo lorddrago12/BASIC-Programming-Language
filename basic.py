@@ -40,6 +40,7 @@ TT_LTE = "LTE"
 TT_GTE = "GTE"
 TT_COMMA = "COMMA"
 TT_ARROW = "ARROW"
+TT_NEWLINE = "NEWLINE"
 TT_EOF = "EOF"
 
 KEYWORDS = [
@@ -55,7 +56,8 @@ KEYWORDS = [
     "TO",
     "STEP",
     "WHILE",
-    "FUNC"
+    "FUNC",
+    "END"
 ]
 
 # =========================
@@ -177,6 +179,9 @@ class Lexer:
 
         while self.current_char is not None:
             if self.current_char in " \t":
+                self.advance()
+            elif self.current_char in ';\n':
+                tokens.append(Token(TT_NEWLINE, pos_start=self.pos))
                 self.advance()
             elif self.current_char in DIGITS:
                 tokens.append(self.make_number())
