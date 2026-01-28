@@ -600,16 +600,23 @@ class Parser:
 
     def if_expr(self):
         res = ParseResult()
+        all_cases = res.register(self.if_expr_cases('IF'))
+        if res.error: return res
+        cases, else_case = all_cases
+        return res.success(IfNode(cases, else_case))
+
+    def if_expr_cases(self, case_keyword):
+        res = ParseResult()
         cases = []
         else_case = None
 
-        if not self.current_tok.matches(TT_KEYWORD, 'IF'):
+        if not self.current_tok.matches(TT_KEYWORD, case_keyword):
             return res.failure(InvalidSyntaxError(
                 self.current_tok.pos_start, self.current_tok.pos_end,
-                "Expected IF"
+                f"Expected '{case_keyword}'"
             ))
 
-        res.register_advance()
+        res.register_advancement()
         self.advance()
 
         condition = res.register(self.expr())
@@ -618,43 +625,87 @@ class Parser:
         if not self.current_tok.matches(TT_KEYWORD, 'THEN'):
             return res.failure(InvalidSyntaxError(
                 self.current_tok.pos_start, self.current_tok.pos_end,
-                "Expected THEN"
+                f"Expected 'THEN'"
             ))
 
-        res.register_advance()
+        res.register_advancement()
         self.advance()
 
-        expr = res.register(self.expr())
-        if res.error: return res
-        cases.append((condition, expr))
-
-        while self.current_tok.matches(TT_KEYWORD, 'ELIF'):
-            res.register_advance()
+        if self.current_tok.type == TT_NEWLINE:
+            res.register_advancement()
             self.advance()
 
-            condition = res.register(self.expr())
+            statements = res.register(self.statements())
             if res.error: return res
+            cases.append((condition, statements, True))
 
-            if not self.current_tok.matches(TT_KEYWORD, 'THEN'):
-                return res.failure(InvalidSyntaxError(
-                    self.current_tok.pos_start, self.current_tok.pos_end,
-                    "Expected THEN"
-                ))
-
-            res.register_advance()
-            self.advance()
-
+            if self.current_tok.matches(TT_KEYWORD, 'END'):
+                res.register_advancement()
+                self.advance()
+            else:
+                all_cases = res.register(self.if_expr_b_or_c())
+                if res.error: return res
+                new_cases, else_case = all_cases
+                cases.extend(new_cases)
+        else:
             expr = res.register(self.expr())
             if res.error: return res
-            cases.append((condition, expr))
+            cases.append((condition, expr, False))
+
+            all_cases = res.register(self.if_expr_b_or_c())
+            if res.error: return res
+            new_cases, else_case = all_cases
+            cases.extend(new_cases)
+
+        return res.success((cases, else_case))
+
+    def if_expr_b(self):
+        return self.if_expr_cases('ELIF')
+
+    def if_expr_c(self):
+        res = ParseResult()
+        else_case = None
 
         if self.current_tok.matches(TT_KEYWORD, 'ELSE'):
-            res.register_advance()
+            res.register_advancement()
             self.advance()
-            else_case = res.register(self.expr())
+
+        if self.current_tok.type == TT_NEWLINE:
+            res.register_advancement()
+            self.advance()
+
+            statements = res.register(self.statements())
+            if res.error: return res
+            else_case = (statements, True)
+
+            if self.current_tok.matches(TT_KEYWORD, 'END'):
+                res.register_advancement()
+                self.advance()
+            else:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected 'END'"
+                ))
+        else:
+            expr = res.register(self.expr())
+            if res.error: return res
+            else_case = (expr, False)
+
+        return res.success(else_case)
+
+    def if_expr_b_or_c(self):
+        res = ParseResult()
+        cases, else_case = [], None
+
+        if self.current_tok.matches(TT_KEYWORD, 'ELIF'):
+            all_cases = res.register(self.if_expr_b())
+            if res.error: return res
+            cases, else_case = all_cases
+        else:
+            else_case = res.register(self.if_expr_c())
             if res.error: return res
 
-        return res.success(IfNode(cases, else_case))
+        return res.success((cases, else_case))
 
     def for_expr(self):
         res = ParseResult()
