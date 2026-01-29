@@ -770,6 +770,24 @@ class Parser:
         res.register_advance()
         self.advance()
 
+        if self.current_tok.type == TT_NEWLINE:
+            res.register_advance()
+            self.advance()
+
+            body = res.register(self.statements())
+            if res.error: return res
+
+            if not self.current_tok.matches(TT_KEYWORD, 'END'):
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected 'END'"
+                ))
+
+            res.register_advance()
+            self.advance()
+
+            return res.success(ForNode(var_name, start_value, end_value, step_value, body))
+
         body = res.register(self.expr())
         if res.error: return res
 
@@ -798,6 +816,24 @@ class Parser:
 
         res.register_advance()
         self.advance()
+
+        if self.current_tok.type == TT_NEWLINE:
+            res.register_advance()
+            self.advance()
+
+            body = res.register(self.statements())
+            if res.error: return res
+
+            if not self.current_tok.matches(TT_KEYWORD, 'END'):
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected 'END'"
+                ))
+
+            res.register_advance()
+            self.advance()
+
+            return res.success(WhileNode(condition, body))
 
         body = res.register(self.expr())
         if res.error: return res
@@ -1121,28 +1157,46 @@ class Parser:
         res.register_advance()
         self.advance()
 
-        if self.current_tok.type != TT_ARROW:
-                return res.failure(InvalidSyntaxError(
-                    self.current_tok.pos_start,
-                    self.current_tok.pos_end,
-                    f"Expected '->'"
-                ))
+        if self.current_tok.type == TT_ARROW:
+            res.register_advance()
+            self.advance()
+            node_to_return = res.register(self.expr())
+            if res.error: return res
+            
+            return res.success(FuncDefNode(
+                var_name_tok, 
+                arg_name_toks,
+                node_to_return,
+                False
+            ))
 
-        res.register_advance()
-        self.advance()
-        node_to_return = res.register(self.expr())
-        if res.error: return res
-         
-        return res.success(FuncDefNode(
-            var_name_tok, 
-            arg_name_toks,
-            node_to_return
+        if self.current_tok.type != TT_NEWLINE:
+            return res.failure(InvalidSyntaxError(
+            self.current_tok.pos_start, self.current_tok.pos_end,
+            "Expected '->' or NEWLINE"
         ))
 
+            body = res.register(self.statements())
+            if res.error: return res
 
+            if not self.current_tok.matches(TT_KEYWORD, 'END'):
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected 'END'"
+                ))
+
+            res.register_advance()
+            self.advance()
+
+            return res.success(FuncDefNode(
+                var_name_tok,
+                arg_name_toks,
+                body,
+                True
+            ))
 
 # =========================
-
+ 
     def bin_op(self, func_a, ops, func_b=None):
         if func_b is None:
             func_b = func_a
