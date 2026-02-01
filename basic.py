@@ -2,9 +2,6 @@
 # IMPORTS
 # =========================
 
-from ast import Return, arg
-from re import escape
-from tkinter import N
 from strings_with_arrows import *
 import string
 import os
@@ -358,7 +355,6 @@ class Lexer:
 # =========================
 
 class NumberNode:
-
     def __init__(self, tok):
         self.tok = tok
         self.pos_start = tok.pos_start
@@ -390,7 +386,7 @@ class VarAccessNode:
         self.pos_end = var_name_tok.pos_end
 
     def __repr__(self):
-        return f'{self.tok}'
+        return f'{self.var_name_tok}'
 
 class VarAssignNode:
     def __init__(self, var_name_tok, value_node):
@@ -400,7 +396,7 @@ class VarAssignNode:
         self.pos_end = value_node.pos_end
 
     def __repr__(self):
-        return f'{self.tok}'
+        return f'({self.var_name_tok} = {self.value_node})'
 
 class UnaryOpNode:
     def __init__(self, op_tok, node):
@@ -410,7 +406,7 @@ class UnaryOpNode:
         self.pos_end = node.pos_end
 
     def __repr__(self):
-        return f'{self.tok}'
+        return f'({self.op_tok}, {self.node})'
 
 class BinOpNode:
     def __init__(self, left_node, op_tok, right_node):
@@ -421,7 +417,7 @@ class BinOpNode:
         self.pos_end = right_node.pos_end
 
     def __repr__(self):
-        return f'{self.tok}'
+        return f'({self.left_node}, {self.op_tok}, {self.right_node})'
 
 class IfNode:
     def __init__(self, cases, else_case):
@@ -461,11 +457,11 @@ class WhileNode:
         return f'{self.tok}'
 
 class FuncDefNode:
-    def __init__(self, var_name_tok, arg_name_toks, body_node, should_return_null):
+    def __init__(self, var_name_tok, arg_name_toks, body_node, should_auto_return):
         self.var_name_tok = var_name_tok
         self.arg_name_toks = arg_name_toks
         self.body_node = body_node
-        self.should_return_null = should_return_null
+        self.should_auto_return = should_auto_return
 
         if self.var_name_tok:
             self.pos_start = self.var_name_tok.pos_start
@@ -494,7 +490,7 @@ class CallNode:
         return f'{self.tok}'
 
 class ReturnNode:
-    def __init__(self, node_to_return,pos_start, pos_end):
+    def __init__(self, node_to_return, pos_start, pos_end):
         self.node_to_return = node_to_return
 
         self.pos_start = pos_start
@@ -587,7 +583,7 @@ class Parser:
 
     def statements(self):
         res = ParseResult()
-        statemnets = []
+        statements = []
         pos_start = self.current_tok.pos_start.copy()
 
         while self.current_tok.type == TT_NEWLINE:
@@ -596,7 +592,7 @@ class Parser:
 
         statement = res.register(self.statement())
         if res.should_return(): return res
-        statemnets.append(statement)
+        statements.append(statement)
 
         more_statements = True
 
@@ -615,10 +611,10 @@ class Parser:
                 self.reverse(res.to_reverse_count)
                 more_statements = False
                 continue
-            statemnets.append(statement)
+            statements.append(statement)
 
         return res.success(ListNode(
-            statemnets,
+            statements,
             pos_start,
             self.current_tok.pos_end.copy()
         ))
@@ -1225,7 +1221,7 @@ class Parser:
                 var_name_tok, 
                 arg_name_toks,
                 node_to_return,
-                False
+                True
             ))
 
         if self.current_tok.type != TT_NEWLINE:
@@ -1250,7 +1246,7 @@ class Parser:
             var_name_tok,
             arg_name_toks,
             body,
-            True
+            False
         ))
 
 # =========================
@@ -1568,20 +1564,18 @@ class List(Value):
             except (IndexError, TypeError):
                 return None, RTError(
                     other.pos_start, other.pos_end,
-                    'Element at this index could not be removed from the list because index is out of bounds',
+                    'Index out of bounds',
                     self.context
                 )
             return new_list, None
-        else:
-            return None, Value.illegal_operation(self, other)
+        return None, Value.illegal_operation(self, other)
 
     def multed_by(self, other):
         if isinstance(other, List):
             new_list = self.copy()
             new_list.elements.extend(other.elements)
             return new_list, None
-        else:
-            return None, Value.illegal_operation(self, other)
+        return None, Value.illegal_operation(self, other)
 
     def dived_by(self, other):
         if isinstance(other, Number):
@@ -1590,24 +1584,22 @@ class List(Value):
             except (IndexError, TypeError):
                 return None, RTError(
                     other.pos_start, other.pos_end,
-                    'Element at this index could not be retrieved from the list because index is out of bounds',
+                    'Index out of bounds',
                     self.context
                 )
-            return new_list, None
-        else:
-            return None, Value.illegal_operation(self, other)
+        return None, Value.illegal_operation(self, other)
 
     def copy(self):
-        copy = List(self.elements)
+        copy = List(self.elements[:])
         copy.set_pos(self.pos_start, self.pos_end)
         copy.set_context(self.context)
         return copy
 
-    def  __str__(self):
-         return {", ".join([str(x) for x in self.elements])}
+    def __str__(self):
+        return f'[{", ".join([str(x) for x in self.elements])}]'
 
-    def  __repr__(self):
-         return f'[{", ".join([str(x) for x in self.elements])}]'
+    def __repr__(self):
+        return self.__str__()
 
 class BaseFunction(Value):
     def __init__(self, name):
@@ -1653,32 +1645,34 @@ class BaseFunction(Value):
         return res.success(None)
 
 class Function(BaseFunction):
-	def __init__(self, name, body_node, arg_names, should_return_null):
-		super().__init__(name)
-		self.body_node = body_node
-		self.arg_names = arg_names
-		self.should_return_null = should_return_null
+  def __init__(self, name, body_node, arg_names, should_auto_return):
+    super().__init__(name)
+    self.body_node = body_node
+    self.arg_names = arg_names
+    self.should_auto_return = should_auto_return
 
-	def execute(self, args):
-		res = RTresult()
-		interpreter = Interpreter()
-		exec_ctx = self.generate_new_context()
+  def execute(self, args):
+    res = RTresult()
+    interpreter = Interpreter()
+    exec_ctx = self.generate_new_context()
 
-		res.register(self.check_and_populate_args(self.arg_names, args, exec_ctx))
-		if res.should_return(): return res
+    res.register(self.check_and_populate_args(self.arg_names, args, exec_ctx))
+    if res.should_return(): return res
 
-		value = res.register(interpreter.visit(self.body_node, exec_ctx))
-		if res.should_return(): return res
-		return res.success(Number.null if self.should_return_null else value)
+    value = res.register(interpreter.visit(self.body_node, exec_ctx))
+    if res.should_return() and res.func_return_value == None: return res
 
-	def copy(self):
-		copy = Function(self.name, self.body_node, self.arg_names, self.should_return_null)
-		copy.set_context(self.context)
-		copy.set_pos(self.pos_start, self.pos_end)
-		return copy
+    ret_value = (value if self.should_auto_return else None) or res.func_return_value or Number.null
+    return res.success(ret_value)
 
-	def __repr__(self):
-		return f"<function {self.name}>"
+  def copy(self):
+    copy = Function(self.name, self.body_node, self.arg_names, self.should_auto_return)
+    copy.set_context(self.context)
+    copy.set_pos(self.pos_start, self.pos_end)
+    return copy
+
+  def __repr__(self):
+    return f"<function {self.name}>"
 
 class BuiltInFunction(BaseFunction):
     def __init__(self, name):
@@ -2021,8 +2015,16 @@ class Interpreter:
             context.symbol_table.set(node.var_name_tok.value, Number(i))
             i += step_value.value
 
-            elements.append(res.register(self.visit(node.body_node, context)))
-            if res.should_return(): return res
+            value = res.register(self.visit(node.body_node, context))
+            if res.should_return() and res.loop_should_continue == False and res.loop_should_break == False: return res
+
+            if res.loop_should_continue: 
+                continue
+
+            if res.loop_should_break:
+                break
+            
+            elements.append(value)
 
         return res.success(
             Number.null if node.should_return_null else
@@ -2040,8 +2042,16 @@ class Interpreter:
 
             if not condition.is_true(): break
 
-            elements.append(res.register(self.visit(node.body_node, context)))
-            if res.should_return(): return res
+            value = res.register(self.visit(node.body_node, context))
+            if res.should_return() and res.loop_should_continue == False and res.loop_should_break == False: return res
+
+            if res.loop_should_continue: 
+                continue
+
+            if res.loop_should_break:
+                break
+            
+            elements.append(value)
 
         return res.success(
             Number.null if node.should_return_null else
@@ -2054,7 +2064,7 @@ class Interpreter:
         func_name = node.var_name_tok.value if node.var_name_tok else None
         body_node = node.body_node
         arg_names = [arg_name.value for arg_name in node.arg_name_toks]
-        func_value = Function(func_name, body_node, arg_names, node.should_return_null).set_context(context).set_pos(node.pos_start, node.pos_end)
+        func_value = Function(func_name, body_node, arg_names, node.should_auto_return).set_context(context).set_pos(node.pos_start, node.pos_end)
 
         if node.var_name_tok:
             context.symbol_table.set(func_name, func_value)
@@ -2085,8 +2095,16 @@ class Interpreter:
             value = res.register(self.visit(node.node_to_return, context))
             if res.should_return(): return res
             return res.success_return(value)
-        
-        return res.success_return(Number.null)
+        else:
+            value = Number.null
+
+        return res.success_return(value)
+
+    def visit_ContinueNode(self, node, context):
+        return RTresult().success_continue()
+
+    def visit_BreakNode(self, node, context):
+        return RTresult().success_break()
 
 
 # =========================
