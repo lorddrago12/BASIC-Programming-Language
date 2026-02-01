@@ -3,7 +3,7 @@
 A dynamically-typed, interpreted programming language built from scratch in Python. Features a complete lexer, parser, and interpreter with support for variables, functions, control flow, and more.
 
 ![Python](https://img.shields.io/badge/Python-3.6+-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Status](https://img.shields.io/badge/status-educational-orange.svg)
 
 ---
 
@@ -22,7 +22,7 @@ A dynamically-typed, interpreted programming language built from scratch in Pyth
 ### Built-in Functions
 - **I/O**: `PRINT()`, `PRINT_RET()`, `INPUT()`, `INPUT_INT()`
 - **Type Checking**: `IS_NUMBER()`, `IS_STRING()`, `IS_LIST()`, `IS_FUNCTION()`
-- **List Operations**: `APPEND()`, `POP()`, `EXTEND()`
+- **List Operations**: `APPEND()`, `POP()`, `EXTEND()`, `LEN()`
 - **Utilities**: `CLEAR()` (clear console)
 
 ### Developer Experience
@@ -39,8 +39,8 @@ A dynamically-typed, interpreted programming language built from scratch in Pyth
 
 ```bash
 # Clone the repository
-git clone https://github.com/lorddrago12/BASIC-Programming-Language.git
-cd BASIC-Progrmming-Language
+git clone https://github.com/yourusername/basic-lang.git
+cd basic-lang
 
 # Run the REPL
 python shell.py
@@ -62,6 +62,14 @@ Basic > VAR y = x * 2 + 5
 Basic > PRINT(y)
 25
 0
+```
+
+### Run Example Programs
+
+Check out `example.basic` for comprehensive examples:
+
+```bash
+python shell.py < example.basic
 ```
 
 ---
@@ -123,6 +131,7 @@ EXTEND(numbers, [7, 8])    # [2, 3, 4, 5, 6, 7, 8]
 
 # Access elements
 numbers/0                  # 2 (first element after pop)
+LEN(numbers)               # Get list length
 ```
 
 ### Conditionals
@@ -235,7 +244,8 @@ basic-lang/
 │   └── Built-in Functions      # Standard library
 ├── shell.py                    # REPL interface
 ├── strings_with_arrows.py      # Error visualization
-└── Grammar.txt                 # Language grammar specification
+├── Grammar.txt                 # Language grammar specification
+└── example.basic               # Example programs
 ```
 
 ### Implementation Details
@@ -308,26 +318,26 @@ PRINT(is_prime(17))  # 1 (true)
 PRINT(is_prime(18))  # 0 (false)
 ```
 
-### List Processing
+### Interactive Calculator
 
 ```python
-VAR numbers = [1, 2, 3, 4, 5]
-
-# Sum all numbers
-VAR sum = 0
-FOR i = 0 TO LEN(numbers) - 1 THEN
-    VAR sum = sum + numbers/i
-END
-PRINT(sum)  # 15
-
-# Find maximum
-VAR max = numbers/0
-FOR i = 1 TO LEN(numbers) - 1 THEN
-    IF numbers/i > max THEN
-        VAR max = numbers/i
+FUNC calculator()
+    PRINT("Simple Calculator")
+    PRINT("Enter 'q' to quit")
+    
+    WHILE TRUE THEN
+        VAR num1 = INPUT_INT("Enter first number: ")
+        VAR op = INPUT("Enter operator (+, -, *, /): ")
+        VAR num2 = INPUT_INT("Enter second number: ")
+        
+        IF op == "+" THEN PRINT(num1 + num2)
+        ELIF op == "-" THEN PRINT(num1 - num2)
+        ELIF op == "*" THEN PRINT(num1 * num2)
+        ELIF op == "/" THEN PRINT(num1 / num2)
+        ELSE PRINT("Invalid operator")
+        END
     END
 END
-PRINT(max)  # 5
 ```
 
 ---
@@ -378,6 +388,47 @@ File <stdin>, line 1
 
 ---
 
+## 📚 Grammar Reference
+
+```
+statements  : NEWLINE* statement (NEWLINE+ statement)* NEWLINE*
+
+statement   : KEYWORD:RETURN expr?
+            : KEYWORD:CONTINUE
+            : KEYWORD:BREAK
+            : expr
+
+expr        : KEYWORD:VAR IDENTIFIER EQ expr
+            : comp-expr ((KEYWORD:AND | KEYWORD:OR) comp-expr)*
+
+comp-expr   : NOT comp-expr
+            : arith-expr ((EE | LT | GT | LTE | GTE) arith-expr)*
+
+arith-expr  : term ((PLUS | MINUS) term)*
+
+term        : factor ((MUL | DIV) factor)*
+
+factor      : (PLUS | MINUS) factor
+            : power
+
+power       : call (POW factor)*
+
+call        : atom (LPAREN (expr (COMMA expr)*)? RPAREN)?
+
+atom        : INT | FLOAT | STRING | IDENTIFIER
+            : LPAREN expr RPAREN
+            : list-expr
+            : if-expr
+            : for-expr
+            : while-expr
+            : func-def
+
+func-def    : KEYWORD:FUNC IDENTIFIER?
+              LPAREN (IDENTIFIER (COMMA IDENTIFIER)*)? RPAREN
+              (ARROW expr | NEWLINE statements KEYWORD:END)
+```
+
+---
 
 ## 🧪 Running Tests
 
@@ -385,9 +436,11 @@ File <stdin>, line 1
 # Interactive REPL
 python shell.py
 
-# Run a program file
-# (Note: File execution can be added by modifying shell.py)
-python shell.py < program.basic
+# Run example file
+python shell.py < example.basic
+
+# Run your own programs
+python shell.py < your_program.basic
 ```
 
 ---
@@ -404,7 +457,7 @@ FALSE   # Boolean false (0)
 
 ## 🤝 Contributing
 
-Contributions are welcome! Here are some ideas for enhancements:
+This is a personal learning project, but suggestions and improvements are welcome! Here are some ideas for enhancements:
 
 - [ ] Add file I/O operations
 - [ ] Implement dictionaries/hash maps
@@ -416,33 +469,51 @@ Contributions are welcome! Here are some ideas for enhancements:
 - [ ] Create standard library
 - [ ] Add debugging features
 - [ ] Implement comments
+- [ ] Add multi-line string support
+- [ ] Implement class/object system
 
 ---
 
 ## 📝 License
 
-This project is open source and available under the [MIT License](LICENSE).
+This project is free to use for **educational and learning purposes**. Feel free to study the code, learn from it, and build upon it for your own education!
+
+**Please note:** This is a personal learning project and is not intended for commercial use.
 
 ---
 
 ## 🎓 Learning Resources
 
-This project demonstrates:
-- **Lexical Analysis**: Tokenizing source code
-- **Parsing**: Building Abstract Syntax Trees
-- **Interpreting**: Executing code via tree traversal
-- **Symbol Tables**: Managing variable scope
-- **Error Handling**: Comprehensive error reporting
-- **Type Systems**: Dynamic typing implementation
+This project demonstrates fundamental concepts in programming language design:
+
+- **Lexical Analysis**: Tokenizing source code into meaningful symbols
+- **Parsing**: Building Abstract Syntax Trees using recursive descent
+- **Interpreting**: Executing code via tree traversal and the visitor pattern
+- **Symbol Tables**: Managing variable scope and context
+- **Error Handling**: Comprehensive error reporting with position tracking
+- **Type Systems**: Implementing dynamic typing
+- **Memory Management**: Reference counting and garbage collection
+- **Control Flow**: Implementing conditionals, loops, and function calls
+
+### Recommended Reading
+- *Crafting Interpreters* by Robert Nystrom
+- *Writing An Interpreter In Go* by Thorsten Ball
+- *Dragon Book* (Compilers: Principles, Techniques, and Tools)
 
 ---
 
 ## 🌟 Acknowledgments
 
-Built as an educational project to understand interpreter design and language implementation from first principles.
+Built as an educational project to understand interpreter design and language implementation from first principles. This project explores how real programming languages work under the hood, from tokenization to execution.
+
+---
+
+## 💡 Why BASIC?
+
+This language is called BASIC as a tribute to the original BASIC (Beginner's All-purpose Symbolic Instruction Code) that helped millions learn programming. While this implementation differs significantly from the original, it shares the same spirit: making programming concepts accessible and understandable.
 
 ---
 
 <div align="center">
-Made with ❤️ using Python
+Made with ❤️ for learning • Built with Python
 </div>
