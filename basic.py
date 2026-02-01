@@ -180,6 +180,8 @@ class Lexer:
         while self.current_char is not None:
             if self.current_char in " \t":
                 self.advance()
+            elif self.current_char == "#":
+                self.skip_comment()
             elif self.current_char in ';\n':
                 tokens.append(Token(TT_NEWLINE, pos_start=self.pos))
                 self.advance()
@@ -349,6 +351,14 @@ class Lexer:
             self.advance()
             tok_type = TT_GTE
         return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
+
+    def skip_comment(self):
+        self.advance()
+
+        while self.current_char != "\n":
+            self.advance()
+
+        self.advance()
 
 # =========================
 # NODES
@@ -1333,182 +1343,182 @@ class RTresult:
 # =========================
 
 class Value:
-	def __init__(self):
-		self.set_pos()
-		self.set_context()
+    def __init__(self):
+        self.set_pos()
+        self.set_context()
 
-	def set_pos(self, pos_start=None, pos_end=None):
-		self.pos_start = pos_start
-		self.pos_end = pos_end
-		return self
+    def set_pos(self, pos_start=None, pos_end=None):
+        self.pos_start = pos_start
+        self.pos_end = pos_end
+        return self
 
-	def set_context(self, context=None):
-		self.context = context
-		return self
+    def set_context(self, context=None):
+        self.context = context
+        return self
 
-	def added_to(self, other):
-		return None, self.illegal_operation(other)
+    def added_to(self, other):
+        return None, self.illegal_operation(other)
 
-	def subbed_by(self, other):
-		return None, self.illegal_operation(other)
+    def subbed_by(self, other):
+        return None, self.illegal_operation(other)
 
-	def multed_by(self, other):
-		return None, self.illegal_operation(other)
+    def multed_by(self, other):
+        return None, self.illegal_operation(other)
 
-	def dived_by(self, other):
-		return None, self.illegal_operation(other)
+    def dived_by(self, other):
+        return None, self.illegal_operation(other)
 
-	def powed_by(self, other):
-		return None, self.illegal_operation(other)
+    def powed_by(self, other):
+        return None, self.illegal_operation(other)
 
-	def get_comparison_eq(self, other):
-		return None, self.illegal_operation(other)
+    def get_comparison_eq(self, other):
+        return None, self.illegal_operation(other)
 
-	def get_comparison_ne(self, other):
-		return None, self.illegal_operation(other)
+    def get_comparison_ne(self, other):
+        return None, self.illegal_operation(other)
 
-	def get_comparison_lt(self, other):
-		return None, self.illegal_operation(other)
+    def get_comparison_lt(self, other):
+        return None, self.illegal_operation(other)
 
-	def get_comparison_gt(self, other):
-		return None, self.illegal_operation(other)
+    def get_comparison_gt(self, other):
+        return None, self.illegal_operation(other)
 
-	def get_comparison_lte(self, other):
-		return None, self.illegal_operation(other)
+    def get_comparison_lte(self, other):
+        return None, self.illegal_operation(other)
 
-	def get_comparison_gte(self, other):
-		return None, self.illegal_operation(other)
+    def get_comparison_gte(self, other):
+        return None, self.illegal_operation(other)
 
-	def anded_by(self, other):
-		return None, self.illegal_operation(other)
+    def anded_by(self, other):
+        return None, self.illegal_operation(other)
 
-	def ored_by(self, other):
-		return None, self.illegal_operation(other)
+    def ored_by(self, other):
+        return None, self.illegal_operation(other)
 
-	def notted(self, other):
-		return None, self.illegal_operation(other)
+    def notted(self, other):
+        return None, self.illegal_operation(other)
 
-	def execute(self, args):
-		return RTresult().failure(self.illegal_operation())
+    def execute(self, args):
+        return RTresult().failure(self.illegal_operation())
 
-	def copy(self):
-		raise Exception('No copy method defined')
+    def copy(self):
+        raise Exception('No copy method defined')
 
-	def is_true(self):
-		return False
+    def is_true(self):
+        return False
 
-	def illegal_operation(self, other=None):
-		if not other: other = self
-		return RTError(
-			self.pos_start, other.pos_end,
-			'Illegal operation',
-			self.context
-		)
+    def illegal_operation(self, other=None):
+        if not other: other = self
+        return RTError(
+            self.pos_start, other.pos_end,
+            'Illegal operation',
+            self.context
+        )
 
 class Number(Value):
-	def __init__(self, value):
-		super().__init__()
-		self.value = value
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
 
-	def added_to(self, other):
-		if isinstance(other, Number):
-			return Number(self.value + other.value).set_context(self.context), None
-		else:
-			return None, Value.illegal_operation(self, other)
+    def added_to(self, other):
+        if isinstance(other, Number):
+            return Number(self.value + other.value).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
 
-	def subbed_by(self, other):
-		if isinstance(other, Number):
-			return Number(self.value - other.value).set_context(self.context), None
-		else:
-			return None, Value.illegal_operation(self, other)
+    def subbed_by(self, other):
+        if isinstance(other, Number):
+            return Number(self.value - other.value).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
 
-	def multed_by(self, other):
-		if isinstance(other, Number):
-			return Number(self.value * other.value).set_context(self.context), None
-		else:
-			return None, Value.illegal_operation(self, other)
+    def multed_by(self, other):
+        if isinstance(other, Number):
+            return Number(self.value * other.value).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
 
-	def dived_by(self, other):
-		if isinstance(other, Number):
-			if other.value == 0:
-				return None, RTError(
-					other.pos_start, other.pos_end,
-					'Division by zero',
-					self.context
-				)
+    def dived_by(self, other):
+        if isinstance(other, Number):
+            if other.value == 0:
+                return None, RTError(
+                    other.pos_start, other.pos_end,
+                    'Division by zero',
+                    self.context
+                )
 
-			return Number(self.value / other.value).set_context(self.context), None
-		else:
-			return None, Value.illegal_operation(self, other)
+            return Number(self.value / other.value).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
 
-	def powed_by(self, other):
-		if isinstance(other, Number):
-			return Number(self.value ** other.value).set_context(self.context), None
-		else:
-			return None, Value.illegal_operation(self, other)
+    def powed_by(self, other):
+        if isinstance(other, Number):
+            return Number(self.value ** other.value).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
 
-	def get_comparison_eq(self, other):
-		if isinstance(other, Number):
-			return Number(int(self.value == other.value)).set_context(self.context), None
-		else:
-			return None, Value.illegal_operation(self, other)
+    def get_comparison_eq(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value == other.value)).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
 
-	def get_comparison_ne(self, other):
-		if isinstance(other, Number):
-			return Number(int(self.value != other.value)).set_context(self.context), None
-		else:
-			return None, Value.illegal_operation(self, other)
+    def get_comparison_ne(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value != other.value)).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
 
-	def get_comparison_lt(self, other):
-		if isinstance(other, Number):
-			return Number(int(self.value < other.value)).set_context(self.context), None
-		else:
-			return None, Value.illegal_operation(self, other)
+    def get_comparison_lt(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value < other.value)).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
 
-	def get_comparison_gt(self, other):
-		if isinstance(other, Number):
-			return Number(int(self.value > other.value)).set_context(self.context), None
-		else:
-			return None, Value.illegal_operation(self, other)
+    def get_comparison_gt(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value > other.value)).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
 
-	def get_comparison_lte(self, other):
-		if isinstance(other, Number):
-			return Number(int(self.value <= other.value)).set_context(self.context), None
-		else:
-			return None, Value.illegal_operation(self, other)
+    def get_comparison_lte(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value <= other.value)).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
 
-	def get_comparison_gte(self, other):
-		if isinstance(other, Number):
-			return Number(int(self.value >= other.value)).set_context(self.context), None
-		else:
-			return None, Value.illegal_operation(self, other)
+    def get_comparison_gte(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value >= other.value)).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
 
-	def anded_by(self, other):
-		if isinstance(other, Number):
-			return Number(int(self.value and other.value)).set_context(self.context), None
-		else:
-			return None, Value.illegal_operation(self, other)
+    def anded_by(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value and other.value)).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
 
-	def ored_by(self, other):
-		if isinstance(other, Number):
-			return Number(int(self.value or other.value)).set_context(self.context), None
-		else:
-			return None, Value.illegal_operation(self, other)
+    def ored_by(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value or other.value)).set_context(self.context), None
+        else:
+            return None, Value.illegal_operation(self, other)
 
-	def notted(self):
-		return Number(1 if self.value == 0 else 0).set_context(self.context), None
+    def notted(self):
+        return Number(1 if self.value == 0 else 0).set_context(self.context), None
 
-	def copy(self):
-		copy = Number(self.value)
-		copy.set_pos(self.pos_start, self.pos_end)
-		copy.set_context(self.context)
-		return copy
+    def copy(self):
+        copy = Number(self.value)
+        copy.set_pos(self.pos_start, self.pos_end)
+        copy.set_context(self.context)
+        return copy
 
-	def is_true(self):
-		return self.value != 0
-	
-	def __repr__(self):
-		return str(self.value)
+    def is_true(self):
+        return self.value != 0
+    
+    def __repr__(self):
+        return str(self.value)
 
 Number.null = Number(0)
 Number.false = Number(0)
@@ -1516,8 +1526,8 @@ Number.true = Number(1)
 
 class String(Value):
     def __init__(self, value):
-         super().__init__()
-         self.value = value
+        super().__init__()
+        self.value = value
 
     def added_to(self, other):
         if isinstance(other, String):
@@ -1526,9 +1536,9 @@ class String(Value):
             return None, Value.illegal_operation(self, other)
 
     def multed_by(self, other):
-         if isinstance(other, Number):
+        if isinstance(other, Number):
             return String(self.value * other.value).set_context(self.context), None
-         else:
+        else:
             return None, Value.illegal_operation(self, other)
 
     def is_true(self):
@@ -1645,38 +1655,38 @@ class BaseFunction(Value):
         return res.success(None)
 
 class Function(BaseFunction):
-  def __init__(self, name, body_node, arg_names, should_auto_return):
-    super().__init__(name)
-    self.body_node = body_node
-    self.arg_names = arg_names
-    self.should_auto_return = should_auto_return
+    def __init__(self, name, body_node, arg_names, should_auto_return):
+        super().__init__(name)
+        self.body_node = body_node
+        self.arg_names = arg_names
+        self.should_auto_return = should_auto_return
 
-  def execute(self, args):
-    res = RTresult()
-    interpreter = Interpreter()
-    exec_ctx = self.generate_new_context()
+    def execute(self, args):
+        res = RTresult()
+        interpreter = Interpreter()
+        exec_ctx = self.generate_new_context()
 
-    res.register(self.check_and_populate_args(self.arg_names, args, exec_ctx))
-    if res.should_return(): return res
+        res.register(self.check_and_populate_args(self.arg_names, args, exec_ctx))
+        if res.should_return(): return res
 
-    value = res.register(interpreter.visit(self.body_node, exec_ctx))
-    if res.should_return() and res.func_return_value == None: return res
+        value = res.register(interpreter.visit(self.body_node, exec_ctx))
+        if res.should_return() and res.func_return_value == None: return res
 
-    ret_value = (value if self.should_auto_return else None) or res.func_return_value or Number.null
-    return res.success(ret_value)
+        ret_value = (value if self.should_auto_return else None) or res.func_return_value or Number.null
+        return res.success(ret_value)
 
-  def copy(self):
-    copy = Function(self.name, self.body_node, self.arg_names, self.should_auto_return)
-    copy.set_context(self.context)
-    copy.set_pos(self.pos_start, self.pos_end)
-    return copy
+    def copy(self):
+        copy = Function(self.name, self.body_node, self.arg_names, self.should_auto_return)
+        copy.set_context(self.context)
+        copy.set_pos(self.pos_start, self.pos_end)
+        return copy
 
-  def __repr__(self):
-    return f"<function {self.name}>"
+    def __repr__(self):
+        return f"<function {self.name}>"
 
 class BuiltInFunction(BaseFunction):
     def __init__(self, name):
-         super().__init__(name)
+        super().__init__(name)
 
     def execute(self, args):
         res = RTresult()
@@ -1822,18 +1832,69 @@ class BuiltInFunction(BaseFunction):
         return RTresult().success(Number.null)
     execute_extend.arg_names = ['listA', 'listB']
 
-BuiltInFunction.print       = BuiltInFunction("PRINT")
-BuiltInFunction.print_ret   = BuiltInFunction("PRINT_RET")
-BuiltInFunction.input       = BuiltInFunction("INPUT")
-BuiltInFunction.input_int   = BuiltInFunction("INPUT_INT")
-BuiltInFunction.clear       = BuiltInFunction("CLEAR")
-BuiltInFunction.is_number   = BuiltInFunction("IS_NUMBER")
-BuiltInFunction.is_string   = BuiltInFunction("IS_STRING")
-BuiltInFunction.is_list     = BuiltInFunction("IS_LIST")
-BuiltInFunction.is_function = BuiltInFunction("IS_FUNCTION")
-BuiltInFunction.append      = BuiltInFunction("APPEND")
-BuiltInFunction.pop         = BuiltInFunction("POP")
-BuiltInFunction.extend      = BuiltInFunction("EXTEND")
+    def execute_len(self, exec_ctx):
+        list = exec_ctx.symbol_table.get("list")
+
+        if not isinstance(list, List):
+            return RTresult().failure(RTError(
+                self.pos_start, self.pos_end,
+                "First argument must be list",
+                exec_ctx
+            ))
+
+        return RTresult().success(Number(len(list.elements)))
+    execute_len.arg_names = ['list']
+
+    def execute_run(self, exec_ctx):
+        fn = exec_ctx.symbol_table.get("fn")
+
+        if not isinstance(fn, String):
+            return RTresult().failure(RTError(
+                self.pos_start, self.pos_end,
+                "First argument must be string",
+                exec_ctx
+            ))
+
+        fn = fn.value
+
+        try:
+            with open(fn, "r") as f:
+                script = f.read()
+        except Exception as e:
+            return RTresult().failure(RTError(
+                self.pos_start, self.pos_end,
+                f"Failed to load script \"{fn}\"\n" + str(e),
+                exec_ctx
+            ))
+
+        _, error = run(fn, script)
+
+        if error:
+            return RTresult().failure(RTError(
+                self.pos_start, self.pos_end,
+                f"Failed to finish executing script \"{fn}\"\n" +
+                error.as_string(),
+                exec_ctx
+            ))
+
+        return RTresult().success(Number.null)
+ 
+    execute_run.arg_names = ["fn"]
+
+BuiltInFunction.print       = BuiltInFunction("print")
+BuiltInFunction.print_ret   = BuiltInFunction("print_ret")
+BuiltInFunction.input       = BuiltInFunction("input")
+BuiltInFunction.input_int   = BuiltInFunction("input_int")
+BuiltInFunction.clear       = BuiltInFunction("clear")
+BuiltInFunction.is_number   = BuiltInFunction("is_number")
+BuiltInFunction.is_string   = BuiltInFunction("is_string")
+BuiltInFunction.is_list     = BuiltInFunction("is_list")
+BuiltInFunction.is_function = BuiltInFunction("is_function")
+BuiltInFunction.append      = BuiltInFunction("append")
+BuiltInFunction.pop         = BuiltInFunction("pop")
+BuiltInFunction.extend      = BuiltInFunction("extend")
+BuiltInFunction.len         = BuiltInFunction("len")
+BuiltInFunction.run         = BuiltInFunction("run")
 
 # =========================
 # CONTEXT
@@ -2127,7 +2188,8 @@ global_symbol_table.set("IS_FUNCTION", BuiltInFunction.is_function)
 global_symbol_table.set("APPEND", BuiltInFunction.append)
 global_symbol_table.set("POP", BuiltInFunction.pop)
 global_symbol_table.set("EXTEND", BuiltInFunction.extend)
-
+global_symbol_table.set("LEN", BuiltInFunction.len)
+global_symbol_table.set("RUN", BuiltInFunction.run)
 
 def run(fn, text):
     lexer = Lexer(fn, text)
