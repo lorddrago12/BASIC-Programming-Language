@@ -39,8 +39,8 @@ A dynamically-typed, interpreted programming language built from scratch in Pyth
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/basic-lang.git
-cd basic-lang
+git clone https://github.com/lorddrago12/BASIC-Programming-Language.git
+cd BASIC-Programming-Language
 
 # Run the REPL
 python shell.py
