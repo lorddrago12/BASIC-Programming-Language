@@ -1,10 +1,313 @@
-VAR a = 0
+# ========================================
+# BASIC Programming Language - Examples
+# ========================================
+# This file demonstrates all major features
+
+PRINT("=== BASIC Language Examples ===")
+PRINT("")
+
+# ========================================
+# 1. VARIABLES & ARITHMETIC
+# ========================================
+PRINT("1. Variables & Arithmetic")
+PRINT("-------------------------")
+
+VAR x = 10
+VAR y = 5
+PRINT("x = " + x)
+PRINT("y = " + y)
+PRINT("x + y = " + (x + y))
+PRINT("x - y = " + (x - y))
+PRINT("x * y = " + (x * y))
+PRINT("x / y = " + (x / y))
+PRINT("x ^ y = " + (x ^ y))
+PRINT("")
+
+# ========================================
+# 2. STRINGS
+# ========================================
+PRINT("2. String Operations")
+PRINT("--------------------")
+
+VAR name = "BASIC"
+VAR version = "1.0"
+PRINT("Language: " + name)
+PRINT("Version: " + version)
+PRINT("Repeat: " + name * 3)
+PRINT("")
+
+# ========================================
+# 3. LISTS
+# ========================================
+PRINT("3. Lists & Arrays")
+PRINT("-----------------")
+
+VAR numbers = [1, 2, 3, 4, 5]
+PRINT("Original list: " + numbers)
+APPEND(numbers, 6)
+PRINT("After append: " + numbers)
+EXTEND(numbers, [7, 8, 9])
+PRINT("After extend: " + numbers)
+PRINT("First element: " + numbers/0)
+PRINT("Last element: " + numbers/8)
+PRINT("")
+
+# ========================================
+# 4. CONDITIONALS
+# ========================================
+PRINT("4. If-Elif-Else")
+PRINT("---------------")
+
+VAR score = 85
+
+PRINT("Score: " + score)
+IF score >= 90 THEN
+    PRINT("Grade: A - Excellent!")
+ELIF score >= 80 THEN
+    PRINT("Grade: B - Good job!")
+ELIF score >= 70 THEN
+    PRINT("Grade: C - Average")
+ELIF score >= 60 THEN
+    PRINT("Grade: D - Needs improvement")
+ELSE
+    PRINT("Grade: F - Failed")
+END
+PRINT("")
+
+# ========================================
+# 5. FOR LOOPS
+# ========================================
+PRINT("5. For Loops")
+PRINT("------------")
+
+PRINT("Counting 1 to 5:")
+FOR i = 1 TO 5 THEN
+    PRINT(i)
+END
+
+PRINT("Even numbers 0 to 10:")
+FOR i = 0 TO 10 STEP 2 THEN
+    PRINT(i)
+END
+
+PRINT("Countdown from 5:")
+FOR i = 5 TO 1 STEP -1 THEN
+    PRINT(i)
+END
+PRINT("Liftoff!")
+PRINT("")
+
+# ========================================
+# 6. WHILE LOOPS
+# ========================================
+PRINT("6. While Loops")
+PRINT("--------------")
+
+VAR count = 0
+PRINT("Counting with while:")
+WHILE count < 5 THEN
+    PRINT("Count: " + count)
+    VAR count = count + 1
+END
+PRINT("")
+
+# ========================================
+# 7. LOOP CONTROL (BREAK & CONTINUE)
+# ========================================
+PRINT("7. Break & Continue")
+PRINT("-------------------")
+
+PRINT("Skip 3, stop at 7:")
+VAR result = 0
 FOR i = 0 TO 10 THEN
-IF i == 4 THEN
-CONTINUE
-ELIF i == 7 THEN
-BREAK
+    IF i == 3 THEN CONTINUE
+    IF i == 7 THEN BREAK
+    PRINT(i)
+    VAR result = result + 1
 END
-VAR a = a + 1
+PRINT("Loop ran " + result + " times")
+PRINT("")
+
+# ========================================
+# 8. FUNCTIONS
+# ========================================
+PRINT("8. Functions")
+PRINT("------------")
+
+# Simple function
+FUNC greet(name) -> PRINT("Hello, " + name + "!")
+greet("World")
+greet("BASIC")
+
+# Function with return value
+FUNC square(n) -> n * n
+PRINT("Square of 5: " + square(5))
+PRINT("Square of 12: " + square(12))
+
+# Recursive function
+FUNC factorial(n)
+    IF n <= 1 THEN RETURN 1
+    RETURN n * factorial(n - 1)
 END
-PRINT(a)
+
+PRINT("Factorial of 5: " + factorial(5))
+PRINT("Factorial of 6: " + factorial(6))
+
+# Anonymous function
+VAR add = FUNC(a, b) -> a + b
+PRINT("3 + 7 = " + add(3, 7))
+PRINT("")
+
+# ========================================
+# 9. FIBONACCI SEQUENCE
+# ========================================
+PRINT("9. Fibonacci Sequence")
+PRINT("---------------------")
+
+FUNC fib(n)
+    IF n <= 1 THEN RETURN n
+    RETURN fib(n - 1) + fib(n - 2)
+END
+
+PRINT("First 10 Fibonacci numbers:")
+FOR i = 0 TO 9 THEN
+    PRINT("fib(" + i + ") = " + fib(i))
+END
+PRINT("")
+
+# ========================================
+# 10. FIZZBUZZ
+# ========================================
+PRINT("10. FizzBuzz (1-20)")
+PRINT("-------------------")
+
+FOR i = 1 TO 20 THEN
+    IF i % 15 == 0 THEN
+        PRINT("FizzBuzz")
+    ELIF i % 3 == 0 THEN
+        PRINT("Fizz")
+    ELIF i % 5 == 0 THEN
+        PRINT("Buzz")
+    ELSE
+        PRINT(i)
+    END
+END
+PRINT("")
+
+# ========================================
+# 11. PRIME NUMBERS
+# ========================================
+PRINT("11. Prime Number Checker")
+PRINT("------------------------")
+
+FUNC is_prime(n)
+    IF n < 2 THEN RETURN 0
+    IF n == 2 THEN RETURN 1
+    
+    FOR i = 2 TO n - 1 THEN
+        IF n % i == 0 THEN RETURN 0
+    END
+    
+    RETURN 1
+END
+
+PRINT("Testing numbers 0-20:")
+FOR i = 0 TO 20 THEN
+    IF is_prime(i) THEN
+        PRINT(i + " is prime")
+    END
+END
+PRINT("")
+
+# ========================================
+# 12. LIST PROCESSING
+# ========================================
+PRINT("12. List Processing")
+PRINT("-------------------")
+
+VAR data = [5, 2, 8, 1, 9, 3, 7]
+PRINT("Data: " + data)
+
+# Sum
+VAR sum = 0
+FOR i = 0 TO LEN(data) - 1 THEN
+    VAR sum = sum + data/i
+END
+PRINT("Sum: " + sum)
+
+# Maximum
+VAR max = data/0
+FOR i = 1 TO LEN(data) - 1 THEN
+    IF data/i > max THEN
+        VAR max = data/i
+    END
+END
+PRINT("Max: " + max)
+
+# Minimum
+VAR min = data/0
+FOR i = 1 TO LEN(data) - 1 THEN
+    IF data/i < min THEN
+        VAR min = data/i
+    END
+END
+PRINT("Min: " + min)
+
+# Average
+PRINT("Average: " + sum / LEN(data))
+PRINT("")
+
+# ========================================
+# 13. NESTED FUNCTIONS
+# ========================================
+PRINT("13. Nested Functions")
+PRINT("--------------------")
+
+FUNC outer(x)
+    VAR inner = FUNC(y) -> x + y
+    RETURN inner(10)
+END
+
+PRINT("outer(5) = " + outer(5))
+PRINT("outer(20) = " + outer(20))
+PRINT("")
+
+# ========================================
+# 14. LOGICAL OPERATIONS
+# ========================================
+PRINT("14. Logical Operations")
+PRINT("----------------------")
+
+VAR a = 1
+VAR b = 0
+
+PRINT("a = " + a + " (true)")
+PRINT("b = " + b + " (false)")
+PRINT("a AND b = " + (a AND b))
+PRINT("a OR b = " + (a OR b))
+PRINT("NOT a = " + (NOT a))
+PRINT("NOT b = " + (NOT b))
+PRINT("")
+
+# ========================================
+# 15. COMPARISON OPERATIONS
+# ========================================
+PRINT("15. Comparisons")
+PRINT("---------------")
+
+VAR num1 = 10
+VAR num2 = 20
+
+PRINT(num1 + " == " + num2 + " : " + (num1 == num2))
+PRINT(num1 + " != " + num2 + " : " + (num1 != num2))
+PRINT(num1 + " < " + num2 + " : " + (num1 < num2))
+PRINT(num1 + " > " + num2 + " : " + (num1 > num2))
+PRINT(num1 + " <= " + num2 + " : " + (num1 <= num2))
+PRINT(num1 + " >= " + num2 + " : " + (num1 >= num2))
+PRINT("")
+
+# ========================================
+# FINALE
+# ========================================
+PRINT("=== All Examples Complete! ===")
+PRINT("Explore shell.py for interactive mode")
