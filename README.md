@@ -4,6 +4,7 @@ A dynamically-typed, interpreted programming language built from scratch in Pyth
 
 ![Python](https://img.shields.io/badge/Python-3.6+-blue.svg)
 ![Status](https://img.shields.io/badge/status-educational-orange.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ---
 
@@ -476,29 +477,9 @@ This is a personal learning project, but suggestions and improvements are welcom
 
 ## 📝 License
 
-This project is free to use for **educational and learning purposes**. Feel free to study the code, learn from it, and build upon it for your own education!
+This project is licensed under the **MIT License** — see the [LISENCE.txt](LISENCE.txt) file for details.
 
-**Please note:** This is a personal learning project and is not intended for commercial use.
-
----
-
-## 🎓 Learning Resources
-
-This project demonstrates fundamental concepts in programming language design:
-
-- **Lexical Analysis**: Tokenizing source code into meaningful symbols
-- **Parsing**: Building Abstract Syntax Trees using recursive descent
-- **Interpreting**: Executing code via tree traversal and the visitor pattern
-- **Symbol Tables**: Managing variable scope and context
-- **Error Handling**: Comprehensive error reporting with position tracking
-- **Type Systems**: Implementing dynamic typing
-- **Memory Management**: Reference counting and garbage collection
-- **Control Flow**: Implementing conditionals, loops, and function calls
-
-### Recommended Reading
-- *Crafting Interpreters* by Robert Nystrom
-- *Writing An Interpreter In Go* by Thorsten Ball
-- *Dragon Book* (Compilers: Principles, Techniques, and Tools)
+Copyright (c) 2026 lorddrago12
 
 ---
 
@@ -515,5 +496,5 @@ This language is called BASIC as a tribute to the original BASIC (Beginner's All
 ---
 
 <div align="center">
-Made with ❤️ for learning • Built with Python
+Made with ❤️ for learning • Built with Python • MIT Licensed
 </div>
